@@ -1,0 +1,102 @@
+# BitGame - Bitcoin Gaming Platform with BTCPay Server
+# Deploy on Oracle Cloud Free Tier (Forever Free) or any VPS
+#
+# QUICK START:
+#   1. Copy .env.example to .env and fill in your values
+#   2. Run: docker-compose up -d
+#   3. Visit: https://your-domain.com (BTCPay) and http://localhost:8080 (Game Store)
+#
+# FREE HOSTING OPTIONS:
+#   - Oracle Cloud Free Tier: https://cloud.oracle.com/free (always free ARM instance)
+#   - Google Cloud Free Tier: https://cloud.google.com/free (e2-micro, always free)
+#   - AWS Free Tier: https://aws.amazon.com/free (t2.micro, 12 months free)
+
+version: '3.8'
+
+services:
+  # BTCPay Server - Bitcoin Payment Processor (open source, free forever)
+  btcpayserver:
+    image: btcpayserver/btcpayserver:latest
+    container_name: btcpay
+    restart: unless-stopped
+    environment:
+      - BTCPAY_HOST=${BTCPAY_HOST:-btcpay.yourdomain.com}
+      - BTCPAY_PORT=443
+      - BTCPAY_PROTOCOL=https
+      - BTCPAY_SSH_ALLOWED=true
+      - NBITCOIN_NETWORK=${NETWORK:-mainnet}
+      - CHAIN_NETWORK=${CHAIN_NETWORK:-BitcoinMain}
+      - BTCPAY_DEFAULT_CRYPTO=BTC
+      - BTCPAY_AUTODISCOVER_EXTERNAL_DOMAINS=true
+      - REDIS_ENABLED=false
+      # Your wallet — payments go straight to YOU
+      - WALLETCOINEXPLORERURL=
+    volumes:
+      - btcpay_datadir:/datadir
+      - nbxplorer_datadir:/nbxplorer
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - nbxplorer
+    networks:
+      - btcpay_net
+
+  # NBXplorer - Bitcoin block explorer for BTCPay
+  nbxplorer:
+    image: nicolasdorier/nbxplorer:latest
+    container_name: nbxplorer
+    restart: unless-stopped
+    environment:
+      - NBITCOIN_NETWORK=${NETWORK:-mainnet}
+      - BTCPAY_NETWORK=${CHAIN_NETWORK:-BitcoinMain}
+      - EXPLORER_NOCONSOLE=true
+    volumes:
+      - nbxplorer_datadir:/datadir
+      - bitcoin_datadir:/bitcoin
+    networks:
+      - btcpay_net
+
+  # Bitcoin Core - Full node (optional, for advanced users)
+  # Uncomment below if you want to run your own Bitcoin node
+  # bitcoind:
+  #   image: btcpayserver/bitcoin:26.0
+  #   container_name: bitcoind
+  #   restart: unless-stopped
+  #   environment:
+  #     - BITCOIN_NETWORK=${NETWORK:-mainnet}
+  #     - EXTRA_ARGS=txindex=1
+  #   volumes:
+  #     - bitcoin_datadir:/bitcoin
+  #   networks:
+  #     - btcpay_net
+
+  # BitGame App - Your Gaming Platform
+  bitgame:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: bitgame
+    restart: unless-stopped
+    environment:
+      - BTCPAY_URL=http://btcpayserver:80
+      - BTCPAY_API_KEY=${BTCPAY_API_KEY:-}
+      - BTCPAY_STORE_ID=${BTCPAY_STORE_ID:-}
+      - SELLER_WALLET=${SELLER_WALLET:-1QLTRW2YLBcwWJbCb1imGgwp98cSrUhNGJ}
+      - COMMISSION_RATE=${COMMISSION_RATE:-0.05}
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - btcpayserver
+    networks:
+      - btcpay_net
+
+volumes:
+  btcpay_datadir:
+  nbxplorer_datadir:
+  bitcoin_datadir:
+
+networks:
+  btcpay_net:
+    driver: bridge
