@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# Shogo runtime files
+.shogo/*.db
+.shogo/*.db-shm
+.shogo/*.db-wal
+.shogo/index.db
+.shogo/sessions.db
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

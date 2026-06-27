@@ -1,0 +1,71 @@
+// SHOGO:CUSTOM-START prisma-header
+// Managed by Shogo. Do not add a datasource `url` or change the generator `provider` — the database URL is configured in prisma.config.ts (Prisma 7+).
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+// SHOGO:CUSTOM-END
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Game {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  genre       String
+  price       Float
+  rating      Float   @default(0)
+  players     Int     @default(0)
+  imageUrl    String?
+  featured    Boolean @default(false)
+  isNew       Boolean @default(false) @map("is_new")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  purchases GamePurchase[]
+
+  @@map("games")
+}
+
+model GamePurchase {
+  id              String   @id @default(cuid())
+  gameId          String   @map("game_id")
+  buyerAddress    String   @map("buyer_address")
+  sellerAddress   String   @map("seller_address")
+  amount          Float
+  commissionRate  Float    @map("commission_rate")
+  commissionAmount Float   @map("commission_amount")
+  sellerAmount    Float    @map("seller_amount")
+  txHash          String?  @map("tx_hash")
+  status          String   @default("pending")
+  confirmations   Int      @default(0)
+  createdAt       DateTime @default(now()) @map("created_at")
+  confirmedAt     DateTime? @map("confirmed_at")
+
+  game Game @relation(fields: [gameId], references: [id])
+
+  @@map("game_purchases")
+}
+
+model CommissionLedger {
+  id              String   @id @default(cuid())
+  purchaseId      String   @map("purchase_id")
+  sellerAddress   String   @map("seller_address")
+  amount          Float
+  txHash          String?  @map("tx_hash")
+  status          String   @default("pending")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("commission_ledger")
+}
